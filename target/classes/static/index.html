@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bulk Email App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f1f1f1;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    .button {
+      display: inline-block;
+      padding: 10px 20px;
+      margin: 10px 0;
+      font-size: 16px;
+      text-decoration: none;
+      color: #fff;
+      background-color: #4285F4;
+      border-radius: 4px;
+    }
+    .button:hover {
+      background-color: #357ae8;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #message {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Bulk Email App</h1>
+
+    <!-- Section shown when the user is not logged in -->
+    <div id="login-section">
+      <p>Please sign in with Google to continue.</p>
+      <!-- This link triggers Spring Security's OAuth2 flow -->
+      <a class="button" href="/oauth2/authorization/google">Sign in with Google</a>
+    </div>
+
+    <!-- Section shown when the user is authenticated -->
+    <div id="app-section" style="display:none;">
+      <h2>You are successfully logged in</h2>
+      <button id="logout" class="button" style="background-color:#d9534f;">Sign Out</button>
+      <hr>
+      <h2>Send an Email</h2>
+      <form id="emailForm">
+        <label for="to">To:</label>
+        <input type="email" id="to" name="to" placeholder="recipient@example.com" required>
+        
+        <label for="subject">Subject:</label>
+        <input type="text" id="subject" name="subject" placeholder="Enter email subject" required>
+        
+        <label for="body">Body:</label>
+        <textarea id="body" name="body" rows="5" placeholder="Enter your message here" required></textarea>
+        
+        <button type="submit" class="button">Send Email</button>
+      </form>
+      <div id="message"></div>
+    </div>
+  </div>
+
+  <script>
+    // Check if the user is authenticated by calling the /user endpoint
+    function checkAuth() {
+      fetch('/user')
+        .then(response => {
+          if (response.ok) return response.json();
+          throw new Error('Not authenticated');
+        })
+        .then(user => {
+          // Hide the login section and show the app section
+          document.getElementById('login-section').style.display = 'none';
+          document.getElementById('app-section').style.display = 'block';
+        })
+        .catch(err => {
+          // If not authenticated, display the login section only
+          document.getElementById('login-section').style.display = 'block';
+          document.getElementById('app-section').style.display = 'none';
+        });
+    }
+
+    // Handle email form submission
+    document.getElementById('emailForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const to = document.getElementById('to').value;
+      const subject = document.getElementById('subject').value;
+      const body = document.getElementById('body').value;
+
+      fetch(`/sendEmail?to=${encodeURIComponent(to)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`)
+        .then(response => response.text())
+        .then(result => {
+          document.getElementById('message').innerText = result;
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          document.getElementById('message').innerText = 'Error sending email.';
+        });
+    });
+
+    // Handle sign out by redirecting to the /logout endpoint
+    document.getElementById('logout').addEventListener('click', function() {
+      window.location.href = '/logout';
+    });
+
+    // Check authentication status on page load
+    checkAuth();
+  </script>
+</body>
+</html>
